@@ -53,7 +53,7 @@ streamlit run app.py # Launch the web interface (text and image input)
 - **scikit-learn** — TF-IDF vectorization, Logistic Regression, evaluation metrics
 - **joblib** — model persistence
 - **Streamlit** — interactive web interface
-- **EasyOCR, OpenCV, Pillow** — image-to-text extraction (OCR) pathway
+- **Tesseract OCR (pytesseract), OpenCV, Pillow** — image-to-text extraction (OCR) pathway
 - **matplotlib, seaborn** — evaluation visualizations (confusion matrix)
 - **Git/GitHub** — version control
 
