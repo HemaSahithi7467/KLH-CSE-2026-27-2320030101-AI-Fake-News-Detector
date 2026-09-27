@@ -12,25 +12,30 @@
 **Supervisor:** Dr. Archana Kalidindi
 
 ## Abstract
-The rapid proliferation of social media and online news platforms has significantly amplified the spread of misinformation, making it increasingly difficult for users to distinguish authentic content from misleading or fabricated information. This project proposes an AI-Based Fake News Detection and Credibility Analysis System that employs Natural Language Processing (NLP) and Machine Learning techniques to classify news articles as Real or Fake. The current implementation uses TF-IDF vectorization (unigrams and bigrams) with a class-balanced Logistic Regression classifier trained on a labeled dataset of real and fake news articles, achieving 97.83% accuracy with balanced precision and recall (0.97-0.98) on held-out test data. The system includes an OCR-based image-input pathway (EasyOCR) allowing users to upload screenshots in addition to typed text. The project further explores generalizability across different time periods and news sources, and includes adversarial robustness testing — evaluating whether reworded fake content can evade detection — drawing on a Cyber Security perspective. Future scope includes transformer-based models (BERT), retrieval-augmented evidence verification, and graded credibility scoring.
+The rapid proliferation of social media and online news platforms has significantly amplified the spread of misinformation, making it increasingly difficult for users to distinguish authentic content from misleading or fabricated information. This project proposes an AI-Based Fake News Detection and Credibility Analysis System that employs Natural Language Processing (NLP) and Machine Learning techniques to classify news articles as Real or Fake. The current implementation uses TF-IDF vectorization (unigrams, bigrams, and trigrams, with sublinear term-frequency scaling) combined with a class-balanced Logistic Regression classifier trained on article titles and body text, achieving 98.69% accuracy with balanced precision and recall (0.98-0.99) on held-out test data. The system includes an OCR-based image-input pathway (Tesseract OCR) allowing users to upload screenshots in addition to typed text. The project further explores generalizability across different time periods, news sources, and text styles (including a documented bias against short, caption-style text), and includes adversarial robustness testing — evaluating whether reworded fake content can evade detection — drawing on a Cyber Security perspective. Future scope includes transformer-based models (BERT), retrieval-augmented evidence verification, graded credibility scoring, and dedicated training data for short-form/social-media-style content.
 
 ## Setup Instructions
 
 1. Clone this repository:
-   git clone https://github.com/HemaSahithi7467/KLH-CSE-2026-2320030101-AI-Fake-News-Detector.git
-   cd KLH-CSE-2026-2320030101-AI-Fake-News-Detector
-2. Install dependencies:
-   pip install pandas scikit-learn joblib streamlit easyocr opencv-python-headless matplotlib seaborn Pillow
-3. Download the dataset (see `data/DATASET_SOURCE.md`) and place `Fake.csv` and `True.csv` in the `data/` folder.
+   git clone https://github.com/HemaSahithi7467/KLH-CSE-2026-27-2320030101-AI-Fake-News-Detector.git
+   cd KLH-CSE-2026-27-2320030101-AI-Fake-News-Detector
+
+2. Install Python dependencies:
+   pip install pandas scikit-learn joblib streamlit pytesseract opencv-python-headless matplotlib seaborn Pillow
+
+3. Install Tesseract OCR separately (not just via pip) from https://github.com/UB-Mannheim/tesseract/wiki, and update the `tesseract_cmd` path in `app.py` if your    install location differs from the default.
+
+4. Download the dataset (see `data/DATASET_SOURCE.md`) and place `Fake.csv` and `True.csv` in the `data/` folder.
 
 ## Execution Instructions
 
 Run these in order:
 python src/load_data.py # Load and inspect the raw dataset
-python src/prepare_data.py # Clean, combine, and label the dataset
+python src/prepare_data.py # Clean, combine (title + text), and label the dataset
 python src/train_model.py # Train, evaluate, and save the model
 python src/predict.py # Test a sample prediction
 python src/adversarial_test.py # Run robustness test
+python src/caption_test.py # Test performance on short, caption-style text
 streamlit run app.py # Launch the web interface (text and image input)
 
 
@@ -59,6 +64,11 @@ streamlit run app.py # Launch the web interface (text and image input)
 
 ## Current Phase Status
 
-**Phase:** PRC-II in progress. Baseline model retrained and improved (Reuters-tag shortcut removed, bigrams and class-balanced weighting added), achieving 97.83% accuracy with balanced precision/recall/F1 (0.97-0.98) across both classes. Full evaluation completed (confusion matrix, classification report). Streamlit interface extended with OCR-based image input. Generalizability testing (out-of-distribution real-world examples) and adversarial robustness testing (reworded fake content) completed with documented findings. Research paper draft prepared in both plain and IEEE formats (see `reports/`).
+**Phase:** PRC-II in progress. Baseline model retrained and improved — title and body text combined, Reuters-tag shortcut removed, unigrams/bigrams/trigrams with sublinear TF scaling added, class-balanced weighting applied — achieving 98.69% accuracy with balanced precision/recall/F1 (0.98-0.99) across both classes. Full evaluation completed (confusion matrix, classification report). Streamlit interface rebuilt with Tesseract OCR for image input, replacing an earlier EasyOCR implementation after a direct comparison showed Tesseract extracts text more accurately on stylized graphic content. Generalizability testing (out-of-distribution real-world examples, including a systematic test on short caption-style claims) and adversarial robustness testing (reworded fake content) completed with documented findings. Research paper draft prepared in both plain and IEEE formats (see `reports/`).
 
-**Next Steps:** Extend generalizability testing to a larger, systematic held-out set of recent/diverse articles; improve OCR handling of stylized/social-media-style graphic content; explore transformer-based (BERT) and evidence-retrieval (RAG) extensions.
+**Key Findings:**
+- Removing a dataset artifact (the "(Reuters)" tag present almost exclusively in real articles) improved genuine generalization at a small cost to raw accuracy.
+- The model shows strong performance (98%+) on full-length article text, but a systematic test on 12 short, caption-style claims revealed only 58.3% accuracy, with a clear bias toward predicting "Fake" regardless of factual accuracy — motivating dedicated future work on short-text training data.
+- OCR engine choice significantly affects downstream prediction confidence: switching from EasyOCR to Tesseract improved text extraction accuracy and increased prediction confidence on the same test images (e.g., 56.62% to 64.38% confidence on one real-news graphic).
+
+**Next Steps:** Collect or construct a dedicated short-text/caption-style dataset to address the identified bias; explore transformer-based (BERT) and evidence-retrieval (RAG) extensions; further improve OCR robustness on stylized graphic content.
