@@ -2,21 +2,51 @@ import numpy as np
 import cv2
 import streamlit as st
 import joblib
-import easyocr
+import pytesseract
 from PIL import Image
 
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 model = joblib.load("models/fake_news_model.pkl")
 vectorizer = joblib.load("models/tfidf_vectorizer.pkl")
-reader = easyocr.Reader(['en'])
 
 
 def preprocess_image(image):
     img_array = np.array(image)
     gray = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
+
+    # Upscale the image 2x - helps OCR read smaller/stylized text more clearly
+    height, width = gray.shape
+    gray = cv2.resize(gray, (width * 2, height * 2), interpolation=cv2.INTER_CUBIC)
+
+    # Remove noise while preserving edges
+    denoised = cv2.fastNlMeansDenoising(gray, h=30)
+
     # Increase contrast using thresholding
-    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    _, thresh = cv2.threshold(denoised, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     return thresh
+
+
+def extract_text_tesseract(image):
+    processed = preprocess_image(image)
+    text = pytesseract.image_to_string(processed)
+    return text.strip()
+
+
+def explain_prediction(text, top_n=6):
+    feature_names = vectorizer.get_feature_names_out()
+    tfidf_vector = vectorizer.transform([text])
+    coefs = model.coef_[0]
+
+    nonzero_indices = tfidf_vector.nonzero()[1]
+    contributions = []
+    for idx in nonzero_indices:
+        word = feature_names[idx]
+        weight = coefs[idx] * tfidf_vector[0, idx]
+        contributions.append((word, weight))
+
+    contributions.sort(key=lambda x: abs(x[1]), reverse=True)
+    return contributions[:top_n]
 
 
 st.title("📰 AI Fake News Detector")
@@ -31,12 +61,10 @@ if st.button("Analyze"):
     if uploaded_image is not None:
         image = Image.open(uploaded_image)
         st.image(image, caption="Uploaded image", use_container_width=True)
-        
-        with st.spinner("Extracting text from image..."):
-            processed_image = preprocess_image(image)
-            ocr_result = reader.readtext(processed_image, detail=0)
-            final_text = " ".join(ocr_result)
-        
+
+        with st.spinner("Extracting text using Tesseract..."):
+            final_text = extract_text_tesseract(image)
+
         st.write("**Extracted text:**")
         st.write(final_text)
 

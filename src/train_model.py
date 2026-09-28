@@ -18,11 +18,11 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42
 )
 
-vectorizer = TfidfVectorizer(stop_words="english", max_df=0.7, ngram_range=(1, 2), min_df=3)
+vectorizer = TfidfVectorizer(stop_words="english", max_df=0.7, ngram_range=(1, 3), min_df=3, sublinear_tf=True)
 X_train_tfidf = vectorizer.fit_transform(X_train)
 X_test_tfidf = vectorizer.transform(X_test)
 
-model = LogisticRegression(class_weight='balanced', max_iter=1000)
+model = LogisticRegression(class_weight='balanced', max_iter=1000, C=2.0)
 model.fit(X_train_tfidf, y_train)
 
 predictions = model.predict(X_test_tfidf)

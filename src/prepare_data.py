@@ -14,6 +14,10 @@ true_df = pd.read_csv("data/True.csv")
 fake_df["text"] = fake_df["text"].apply(clean_text)
 true_df["text"] = true_df["text"].apply(clean_text)
 
+# Combine title + body text, since headlines carry strong signal the model was missing
+fake_df["text"] = fake_df["title"] + " " + fake_df["text"]
+true_df["text"] = true_df["title"] + " " + true_df["text"]
+
 # Add label column: 1 = real, 0 = fake
 fake_df["label"] = 0
 true_df["label"] = 1
